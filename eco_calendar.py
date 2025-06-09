@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
 
-DISCORD_WEBHOOK = "https://discord.com/api/webhooks/DEIN-WEBHOOK-HIER"
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1381377183016030238/uGrQBLCiK_AouYVJ_gMMUzq69KNFglXy4e4aNJ6PVWWKSaoNvtDxeMtyQydR5nQjSoxc"
 
 def get_today_events():
     url = "https://www.investing.com/economic-calendar/"
