@@ -12,33 +12,45 @@ def get_today_events():
     soup = BeautifulSoup(r.text, "html.parser")
 
     today = datetime.now(pytz.timezone("Europe/Berlin")).strftime("%A, %d. %B %Y")
-    events = [f"📆 **Wirtschaftstermine für {today}**\n"]
+    msg = [f"📊 **Wirtschaftskalender für {today}**\n"]
 
     for row in soup.select("tr.js-event-item"):
-        title = row.get("data-event-title")
-        country = row.get("data-country")
-        time = row.get("data-event-datetime")
         impact = row.get("data-impact")
-        if impact in ("2", "3"):
-            try:
-                event_time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
-                time_str = event_time.strftime("%H:%M")
-                stars = "⭐⭐⭐" if impact == "3" else "⭐⭐"
-                flag = {
-                    "Germany": "🇩🇪", "United States": "🇺🇸", "Euro Zone": "🇪🇺",
-                    "United Kingdom": "🇬🇧", "Japan": "🇯🇵", "China": "🇨🇳",
-                    "Canada": "🇨🇦", "Switzerland": "🇨🇭"
-                }.get(country, "🌍")
-                events.append(f"– {flag} {title} – {time_str} Uhr {stars}")
-            except:
-                continue
+        if impact not in ("2", "3"):
+            continue  # nur 2- und 3-Sterne
 
-    if len(events) == 1:
-        events.append("✅ Heute stehen keine relevanten Termine an.")
-    events.append("🔗 https://de.investing.com/economic-calendar/")
-    return "\n".join(events)
+        try:
+            title = row.get("data-event-title")
+            country = row.get("data-country")
+            currency = row.get("data-event-currency")
+            time = row.get("data-event-datetime")
+            actual = row.select_one(".actualColumn").get_text(strip=True)
+            forecast = row.select_one(".forecastColumn").get_text(strip=True)
+            previous = row.select_one(".previousColumn").get_text(strip=True)
+
+            event_time = datetime.strptime(time, "%Y-%m-%d %H:%M:%S")
+            time_str = event_time.strftime("%H:%M")
+
+            flag = {
+                "Germany": "🇩🇪", "United States": "🇺🇸", "Euro Zone": "🇪🇺",
+                "United Kingdom": "🇬🇧", "Japan": "🇯🇵", "China": "🇨🇳",
+                "Canada": "🇨🇦", "Switzerland": "🇨🇭", "Australia": "🇦🇺"
+            }.get(country, "🌍")
+
+            msg.append(
+                f"**{time_str} {flag} {currency} – {title}**\n"
+                f"📈 Erwartet: {forecast or '–'} | Vorher: {previous or '–'} | Aktuell: {actual or '–'}\n"
+            )
+        except Exception as e:
+            continue
+
+    if len(msg) == 1:
+        msg.append("✅ Heute stehen keine relevanten Termine an.")
+
+    msg.append("🔗 Quelle: https://de.investing.com/economic-calendar/")
+    return "\n".join(msg)
 
 def send_to_discord(message):
     requests.post(DISCORD_WEBHOOK, json={"content": message})
 
-send_to_discord(get_today_events())
+send_to_discord(get_today_events()
