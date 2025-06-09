@@ -53,4 +53,4 @@ def get_today_events():
 def send_to_discord(message):
     requests.post(DISCORD_WEBHOOK, json={"content": message})
 
-send_to_discord(get_today_events()
+send_to_discord(get_today_events())
