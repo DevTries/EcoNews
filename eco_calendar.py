@@ -7,7 +7,8 @@ import pytz
 DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1381377183016030238/uGrQBLCiK_AouYVJ_gMMUzq69KNFglXy4e4aNJ6PVWWKSaoNvtDxeMtyQydR5nQjSoxc"
 
 def get_events():
-    url = "https://www.forexfactory.com/calendar?day=2025-06-10"
+    today = datetime.now().strftime("%Y-%m-%d")
+    url = f"https://www.forexfactory.com/calendar?day={today}"
     headers = {"User-Agent": "Mozilla/5.0"}
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.text, "html.parser")
@@ -24,8 +25,11 @@ def get_events():
             continue
 
         impact_class = impact_cell.get("class", [])
-        #if "medium" not in impact_class and "high" not in impact_class:
-           # continue
+        # Debug-Ausgabe (kann später entfernt werden)
+        print(f"Event Impact Klassen: {impact_class}")
+
+        if "medium" not in impact_class and "high" not in impact_class:
+            continue
 
         time_cell = row.select_one(".time")
         event_cell = row.select_one(".event")
