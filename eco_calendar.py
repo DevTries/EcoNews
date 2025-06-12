@@ -7,7 +7,7 @@ import pytz
 DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1381377183016030238/uGrQBLCiK_AouYVJ_gMMUzq69KNFglXy4e4aNJ6PVWWKSaoNvtDxeMtyQydR5nQjSoxc"
 
 def get_events():
-    url = "https://www.forexfactory.com/calendar"
+    url = "https://www.forexfactory.com/calendar?day=2025-06-10"
     headers = {"User-Agent": "Mozilla/5.0"}
     r = requests.get(url, headers=headers)
     soup = BeautifulSoup(r.text, "html.parser")
