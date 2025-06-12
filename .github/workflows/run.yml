@@ -1,25 +1,25 @@
-name: Täglicher Wirtschaftskalender-Bot
+name: Daily ForexFactory News
 
 on:
   schedule:
-    - cron: '30 5 * * *'  # 05:30 UTC = 07:30 Berlin
-  workflow_dispatch:       # Manuelles Starten möglich
+    - cron: '30 5 * * *'  # UTC 5:30 = 07:30 CET/CEST
+  workflow_dispatch:
 
 jobs:
-  run-bot:
+  post-news:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Repository klonen
+      - name: Checkout Repo
         uses: actions/checkout@v3
 
-      - name: Python einrichten
-        uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      - name: Abhängigkeiten installieren
+      - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      - name: Bot ausführen
-        run: python eco_calendar.py
+      - name: Run Script
+        run: python main.py
