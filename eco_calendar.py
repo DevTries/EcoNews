@@ -1,9 +1,10 @@
+
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
 
-DISCORD_WEBHOOK = "🔗 DEIN_DISCORD_WEBHOOK_HIER"
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1381377183016030238/uGrQBLCiK_AouYVJ_gMMUzq69KNFglXy4e4aNJ6PVWWKSaoNvtDxeMtyQydR5nQjSoxc"
 
 def get_events():
     url = "https://www.forexfactory.com/calendar"
@@ -24,7 +25,7 @@ def get_events():
 
         impact_class = impact_cell.get("class", [])
         if "medium" not in impact_class and "high" not in impact_class:
-            continue  # nur 2 und 3 Sterne
+            continue
 
         time_cell = row.select_one(".time")
         event_cell = row.select_one(".event")
@@ -53,5 +54,4 @@ def get_events():
 def send_to_discord(message):
     requests.post(DISCORD_WEBHOOK, json={"content": message})
 
-# Ausführen
 send_to_discord(get_events())
