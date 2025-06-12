@@ -24,8 +24,8 @@ def get_events():
             continue
 
         impact_class = impact_cell.get("class", [])
-        if "medium" not in impact_class and "high" not in impact_class:
-            continue
+        #if "medium" not in impact_class and "high" not in impact_class:
+           # continue
 
         time_cell = row.select_one(".time")
         event_cell = row.select_one(".event")
