@@ -1,25 +1,24 @@
-name: Daily ForexFactory News
+name: Tägliche Wirtschaftsnachrichten
 
 on:
   schedule:
-    - cron: '30 5 * * *'  # UTC 5:30 = 07:30 CET/CEST
+    - cron: '30 5 * * *'  # Jeden Tag um 07:30 Uhr (Berlin-Zeit = UTC+2)
   workflow_dispatch:
 
 jobs:
-  post-news:
+  send-news:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repo
+      - name: Code auschecken
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Python einrichten
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Abhängigkeiten installieren
         run: pip install -r requirements.txt
 
-      - name: Run Script
+      - name: Wirtschaftsnachrichten senden
         run: python eco_calendar.py
