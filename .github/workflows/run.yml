@@ -1,9 +1,9 @@
-name: Send Economic News
+name: Send Economic News to Discord
 
 on:
   schedule:
-    - cron: '30 5 * * *'   # Täglich um 07:30 MESZ (5:30 UTC)
-  workflow_dispatch:        # Manuelles Triggern möglich
+    - cron: '30 5 * * *'  # 07:30 Berlin-Zeit (UTC +2 im Sommer = 05:30 UTC)
+  workflow_dispatch:      # Manuelles Ausführen möglich
 
 jobs:
   send-news:
@@ -12,30 +12,24 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      with:
-        persist-credentials: false   # wichtig für eigenen Push
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.10'
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: Run economic calendar script
-      run: python eco_calendar.py
-
-    - name: Configure Git
       run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-    - name: Commit and push CSV file
+    - name: Run script
+      run: python script.py
+
+    - name: Commit CSV if updated
       run: |
-        git add data/
-        git diff --quiet --exit-code || git commit -m "Add economic calendar CSV for $(date +'%Y-%m-%d')"
-        git push origin HEAD:main
-      env:
-        # GitHub Token mit Push-Rechten (automatisch gesetzt)
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        git add data/economic_calendar.csv
+        git commit -m "Update economic calendar" || echo "No changes to commit"
+        git push
