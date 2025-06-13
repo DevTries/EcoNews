@@ -24,7 +24,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run script
-      run: python script.py
+      run: eco_calendar.py
 
     - name: Commit CSV if updated
       run: |
