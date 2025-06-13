@@ -1,37 +1,41 @@
-name: Tägliche Wirtschaftsnachrichten
+name: Send Economic News
 
 on:
   schedule:
-    - cron: '30 5 * * *'  # Läuft täglich um 07:30 Uhr (Berlin-Zeit)
-  workflow_dispatch:
+    - cron: '30 5 * * *'   # Täglich um 07:30 MESZ (5:30 UTC)
+  workflow_dispatch:        # Manuelles Triggern möglich
 
 jobs:
   send-news:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Repository auschecken
-        uses: actions/checkout@v3
-        with:
-          persist-credentials: true
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        persist-credentials: false   # wichtig für eigenen Push
 
-      - name: 🐍 Python einrichten
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: 📦 Abhängigkeiten installieren
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Install dependencies
+      run: pip install -r requirements.txt
 
-      - name: 📊 Wirtschaftskalender holen & an Discord senden
-        run: python eco_calendar.py
+    - name: Run economic calendar script
+      run: python eco_calendar.py
 
-      - name: 💾 Neue CSV-Datei committen (falls Änderungen)
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/*.csv
-          git diff --cached --quiet || git commit -m "📊 Neue CSV für $(date +'%Y-%m-%d')"
-          git push
+    - name: Configure Git
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Commit and push CSV file
+      run: |
+        git add data/
+        git diff --quiet --exit-code || git commit -m "Add economic calendar CSV for $(date +'%Y-%m-%d')"
+        git push origin HEAD:main
+      env:
+        # GitHub Token mit Push-Rechten (automatisch gesetzt)
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
