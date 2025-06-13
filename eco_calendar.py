@@ -68,9 +68,19 @@ def format_for_discord(data):
 
 def send_to_discord(message):
     requests.post(WEBHOOK_URL, json={"content": message})
+    
 
 if __name__ == "__main__":
     events = get_forex_factory_data()
-    save_to_csv(events)
+    
+    # CSV unter data/ speichern
+    os.makedirs("data", exist_ok=True)
+    csv_path = os.path.join("data", CSV_FILENAME)
+    
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["Time", "Currency", "Event", "Impact"])
+        writer.writeheader()
+        writer.writerows(events)
+
     discord_message = format_for_discord(events)
     send_to_discord(discord_message)
