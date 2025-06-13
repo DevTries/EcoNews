@@ -5,82 +5,69 @@ import pytz
 import csv
 import os
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/1381377183016030238/uGrQBLCiK_AouYVJ_gMMUzq69KNFglXy4e4aNJ6PVWWKSaoNvtDxeMtyQydR5nQjSoxc"
-CSV_FILENAME = f"news_{datetime.now().strftime('%Y-%m-%d')}.csv"
+DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1381377183016030238/uGrQBLCiK_AouYVJ_gMMUzq69KNFglXy4e4aNJ6PVWWKSaoNvtDxeMtyQydR5nQjSoxc"
 
-def get_forex_factory_data():
-    tz = pytz.timezone("Europe/Berlin")
-    today = datetime.now(tz).strftime("%Y-%m-%d")
-    url = f"https://www.forexfactory.com/calendar?day={today}"
+def get_events():
+    url = "https://www.forexfactory.com/calendar"
     headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
+    r = requests.get(url, headers=headers)
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    tz = pytz.timezone("Europe/Berlin")
+    now = datetime.now(tz)
+    today_str = now.strftime("%A, %d. %B %Y")
+    date_csv = now.strftime("%Y-%m-%d")
+    message = [f"📅 **Wirtschaftstermine für {today_str}**\n"]
+    csv_rows = []
 
     rows = soup.find_all("tr", class_="calendar__row")
-    data = []
-
     for row in rows:
-        time = row.select_one(".time")
-        currency = row.select_one(".currency")
-        event = row.select_one(".event")
-        impact = row.select_one(".impact span")
-
-        if not (time and currency and event and impact):
+        impact_cell = row.select_one(".impact span")
+        if not impact_cell:
             continue
 
-        impact_class = impact.get("class", [])
-        if not any(x in impact_class for x in ("high", "medium")):
+        impact_class = impact_cell.get("class", [])
+        if not any(x in impact_class for x in ["medium", "high"]):
             continue
 
-        impact_level = "High" if "high" in impact_class else "Medium"
-        data.append({
-            "Time": time.text.strip(),
-            "Currency": currency.text.strip(),
-            "Event": event.text.strip(),
-            "Impact": impact_level
-        })
+        time_cell = row.select_one(".time")
+        event_cell = row.select_one(".event")
+        currency_cell = row.select_one(".currency")
 
-    return data
+        if not (time_cell and event_cell and currency_cell):
+            continue
 
-def save_to_csv(data):
-    with open(CSV_FILENAME, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["Time", "Currency", "Event", "Impact"])
-        writer.writeheader()
-        writer.writerows(data)
+        time_text = time_cell.get_text(strip=True)
+        event = event_cell.get_text(strip=True)
+        currency = currency_cell.get_text(strip=True)
 
-def format_for_discord(data):
-    if not data:
-        return f"📅 **Wirtschaftstermine für heute**\n✅ Keine relevanten Termine.\n🔗 https://www.forexfactory.com/calendar"
+        flag = {
+            "USD": "🇺🇸", "EUR": "🇪🇺", "GBP": "🇬🇧", "JPY": "🇯🇵",
+            "AUD": "🇦🇺", "CAD": "🇨🇦", "CHF": "🇨🇭", "NZD": "🇳🇿",
+            "CNY": "🇨🇳", "DE": "🇩🇪"
+        }.get(currency, "🌍")
 
-    flag_map = {
-        "USD": "🇺🇸", "EUR": "🇪🇺", "GBP": "🇬🇧", "JPY": "🇯🇵",
-        "AUD": "🇦🇺", "CAD": "🇨🇦", "CHF": "🇨🇭", "NZD": "🇳🇿",
-        "CNY": "🇨🇳", "DE": "🇩🇪"
-    }
+        stars = "⭐⭐⭐" if "high" in impact_class else "⭐⭐"
+        message.append(f"– {flag} {event} ({currency}) – {time_text} Uhr {stars}")
 
-    msg = [f"📅 **Wirtschaftstermine für {datetime.now().strftime('%A, %d. %B %Y')}**\n"]
-    for entry in data:
-        flag = flag_map.get(entry["Currency"], "🌍")
-        stars = "⭐⭐⭐" if entry["Impact"] == "High" else "⭐⭐"
-        msg.append(f"– {flag} {entry['Event']} – {entry['Time']} Uhr {stars}")
-    msg.append("🔗 https://www.forexfactory.com/calendar")
-    return "\n".join(msg)
+        csv_rows.append([date_csv, time_text, event, currency, stars])
+
+    if not csv_rows:
+        message.append("✅ Keine relevanten Termine für heute.")
+        csv_rows.append([date_csv, "–", "Keine relevanten Termine", "–", "–"])
+
+    message.append("🔗 https://www.forexfactory.com/calendar")
+
+    # 📁 CSV immer speichern
+    os.makedirs("data", exist_ok=True)
+    with open(f"data/news_{date_csv}.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Datum", "Uhrzeit", "Ereignis", "Währung", "Wichtigkeit"])
+        writer.writerows(csv_rows)
+
+    return "\n".join(message)
 
 def send_to_discord(message):
-    requests.post(WEBHOOK_URL, json={"content": message})
-    
+    requests.post(DISCORD_WEBHOOK, json={"content": message})
 
-if __name__ == "__main__":
-    events = get_forex_factory_data()
-    
-    # CSV unter data/ speichern
-    os.makedirs("data", exist_ok=True)
-    csv_path = os.path.join("data", CSV_FILENAME)
-    
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["Time", "Currency", "Event", "Impact"])
-        writer.writeheader()
-        writer.writerows(events)
-
-    discord_message = format_for_discord(events)
-    send_to_discord(discord_message)
+send_to_discord(get_events())
